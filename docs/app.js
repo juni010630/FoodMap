@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "../data/restaurants.json";
+  var DATA_URL = "data/restaurants.json";
   var allData = [];
   var markers = [];
   var map;

@@ -3,4 +3,5 @@ __pycache__/
 crawler/test_*.py
 crawler/fix_encoding.py
 debug.js
+data/_progress.json
 .DS_Store

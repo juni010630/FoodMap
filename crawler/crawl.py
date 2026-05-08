@@ -1,6 +1,11 @@
 """
 FoodMap 크롤러
 네이버 지도에서 음식점 검색 → 리뷰 태그 파싱 → 맛집 점수 계산 → JSON 저장
+
+사용법:
+  python crawl.py test     # 강남역 테스트
+  python crawl.py metro    # 수도권 전체
+  python crawl.py resume   # 중단된 크롤링 이어하기
 """
 import requests
 import re
@@ -15,10 +20,46 @@ from config import (
 )
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+PROGRESS_FILE = os.path.join(DATA_DIR, "_progress.json")
+RESULT_FILE = os.path.join(DATA_DIR, "restaurants.json")
+
+
+def load_progress():
+    """중단된 진행 상태 불러오기"""
+    if os.path.exists(PROGRESS_FILE):
+        with open(PROGRESS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return None
+
+
+def save_progress(state):
+    """진행 상태 저장 (중간 저장)"""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+
+
+def clear_progress():
+    """완료 후 진행 파일 삭제"""
+    if os.path.exists(PROGRESS_FILE):
+        os.remove(PROGRESS_FILE)
+
+
+def save_results(results):
+    """결과 JSON 저장"""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    sorted_results = sorted(results, key=lambda r: r["score"], reverse=True)
+    with open(RESULT_FILE, "w", encoding="utf-8") as f:
+        json.dump(sorted_results, f, ensure_ascii=False, indent=2)
+    # GitHub Pages용 docs/data에도 복사
+    docs_data = os.path.join(DATA_DIR, "..", "docs", "data")
+    if os.path.isdir(docs_data):
+        with open(os.path.join(docs_data, "restaurants.json"), "w", encoding="utf-8") as f:
+            json.dump(sorted_results, f, ensure_ascii=False, indent=2)
 
 
 def search_restaurants(area):
-    """특정 지역의 음식점 목록 검색 → (id, name, category, lat, lng) 리스트"""
+    """특정 지역의 음식점 목록 검색"""
     url = "https://pcmap.place.naver.com/restaurant/list"
     params = {
         "query": f"{area['name']} 음식점",
@@ -30,7 +71,10 @@ def search_restaurants(area):
 
     try:
         r = requests.get(url, params=params, headers=HTTP_HEADERS, timeout=15)
-        r.encoding = "utf-8"
+        if r.status_code == 429:
+            print(f"  [!] 429 차단됨. 30초 대기 후 재시도...")
+            time.sleep(30)
+            r = requests.get(url, params=params, headers=HTTP_HEADERS, timeout=15)
         if r.status_code != 200:
             print(f"  [!] search failed: HTTP {r.status_code}")
             return []
@@ -58,7 +102,6 @@ def search_restaurants(area):
         if not name or not lat or not lng:
             continue
 
-        # 카페/디저트 제외
         if any(exc in category for exc in EXCLUDE_CATEGORIES):
             continue
 
@@ -79,6 +122,10 @@ def fetch_score(place_id):
 
     try:
         r = requests.get(url, headers=HTTP_HEADERS, timeout=10)
+        if r.status_code == 429:
+            print("429! 30초 대기...", end=" ")
+            time.sleep(30)
+            r = requests.get(url, headers=HTTP_HEADERS, timeout=10)
         if r.status_code != 200:
             return None
     except Exception:
@@ -91,7 +138,6 @@ def fetch_score(place_id):
 
     chunk = html[idx:idx + 5000]
 
-    # code + displayName + count 추출
     tags = []
     for m in re.finditer(
         r'"code":"([^"]+)"[^}]*?"displayName":"([^"]+)","count":(\d+)', chunk
@@ -105,12 +151,10 @@ def fetch_score(place_id):
     if len(tags) < 2:
         return None
 
-    # "음식이 맛있어요" (code: food_good) 찾기
     food_tag = next((t for t in tags if t["code"] == FOOD_TAG_CODE), None)
     if not food_tag:
         return None
 
-    # 2위 태그 (food_good 제외 최다)
     others = sorted(
         [t for t in tags if t["code"] != FOOD_TAG_CODE],
         key=lambda t: t["count"],
@@ -127,43 +171,62 @@ def fetch_score(place_id):
         "foodCount": food_tag["count"],
         "secondTag": second["name"],
         "secondCount": second["count"],
-        "totalTags": len(tags),
     }
 
 
-def crawl(areas, output_file="restaurants.json"):
-    """메인 크롤링 파이프라인"""
+def crawl(areas, resume_state=None):
+    """메인 크롤링 파이프라인 (중간 저장 + 이어하기 지원)"""
     os.makedirs(DATA_DIR, exist_ok=True)
-    output_path = os.path.join(DATA_DIR, output_file)
 
-    all_results = []
-    seen_ids = set()
-    total_searched = 0
+    # 이어하기: 이전 상태 복원
+    if resume_state:
+        all_results = resume_state["results"]
+        seen_ids = set(resume_state["seen_ids"])
+        start_area_idx = resume_state["area_idx"]
+        start_rest_idx = resume_state["rest_idx"]
+        pending = resume_state.get("pending", [])
+        print(f"[*] 이어하기: {len(all_results)}개 수집됨, area#{start_area_idx}부터 재개")
+    else:
+        all_results = []
+        seen_ids = set()
+        start_area_idx = 0
+        start_rest_idx = 0
+        pending = []
+
+    total_searched = len(seen_ids)
     total_scored = 0
 
-    for area in areas:
-        print(f"\n[*] {area['name']} 검색 중...")
-        restaurants = search_restaurants(area)
-        new = [r for r in restaurants if r["id"] not in seen_ids]
-        seen_ids.update(r["id"] for r in restaurants)
-        print(f"  검색 결과: {len(restaurants)}개 (신규: {len(new)}개)")
-        total_searched += len(new)
+    for area_idx in range(start_area_idx, len(areas)):
+        area = areas[area_idx]
+        print(f"\n[*] {area['name']} 검색 중... ({area_idx + 1}/{len(areas)})")
 
-        time.sleep(SEARCH_DELAY)
+        # 이어하기 시 이미 검색한 지역은 pending 사용
+        if area_idx == start_area_idx and pending:
+            new = pending
+            print(f"  이어하기: {len(new)}개 남은 음식점")
+        else:
+            restaurants = search_restaurants(area)
+            new = [r for r in restaurants if r["id"] not in seen_ids]
+            seen_ids.update(r["id"] for r in restaurants)
+            print(f"  검색 결과: {len(restaurants)}개 (신규: {len(new)}개)")
+            total_searched += len(new)
+            start_rest_idx = 0
+            time.sleep(SEARCH_DELAY)
 
-        for i, rest in enumerate(new):
-            print(f"  [{i+1}/{len(new)}] {rest['name']} ({rest['category']})...", end=" ")
+        for i in range(start_rest_idx, len(new)):
+            rest = new[i]
+            print(f"  [{i + 1}/{len(new)}] {rest['name']} ({rest['category']})...", end=" ")
 
             score_data = fetch_score(rest["id"])
             if not score_data:
-                print("skip (no food tag)")
+                print("skip")
                 time.sleep(DETAIL_DELAY)
                 continue
 
             total_scored += 1
 
             if score_data["score"] < MIN_SCORE:
-                print(f"score={score_data['score']:.2f} (below {MIN_SCORE})")
+                print(f"{score_data['score']:.2f}")
                 time.sleep(DETAIL_DELAY)
                 continue
 
@@ -180,22 +243,43 @@ def crawl(areas, output_file="restaurants.json"):
                 "area": area["name"],
             }
             all_results.append(result)
-            print(f"score={score_data['score']:.2f} *** PASS ***")
+            print(f"{score_data['score']:.2f} *** PASS ***")
+
+            # 10개마다 중간 저장
+            if len(all_results) % 10 == 0:
+                save_progress({
+                    "results": all_results,
+                    "seen_ids": list(seen_ids),
+                    "area_idx": area_idx,
+                    "rest_idx": i + 1,
+                    "pending": new,
+                    "areas_mode": "metro" if len(areas) > 3 else "test",
+                })
+                save_results(all_results)
+                print(f"  [+] 중간 저장 ({len(all_results)}개)")
 
             time.sleep(DETAIL_DELAY)
 
-    # 점수 순 정렬
-    all_results.sort(key=lambda r: r["score"], reverse=True)
+        # 지역 완료 후 저장
+        save_progress({
+            "results": all_results,
+            "seen_ids": list(seen_ids),
+            "area_idx": area_idx + 1,
+            "rest_idx": 0,
+            "pending": [],
+            "areas_mode": "metro" if len(areas) > 3 else "test",
+        })
+        save_results(all_results)
+        start_rest_idx = 0
 
-    # JSON 저장
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(all_results, f, ensure_ascii=False, indent=2)
+    # 완료
+    save_results(all_results)
+    clear_progress()
 
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"검색: {total_searched}개")
-    print(f"점수 계산 가능: {total_scored}개")
-    print(f"2.0+ 맛집: {len(all_results)}개")
-    print(f"저장: {output_path}")
+    print(f"1.75+ 맛집: {len(all_results)}개")
+    print(f"저장: {RESULT_FILE}")
 
     return all_results
 
@@ -203,11 +287,19 @@ def crawl(areas, output_file="restaurants.json"):
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "test"
 
-    if mode == "test":
+    if mode == "resume":
+        state = load_progress()
+        if not state:
+            print("이어할 진행 상태가 없습니다.")
+            sys.exit(1)
+        areas = METRO_AREAS if state.get("areas_mode") == "metro" else TEST_AREAS
+        print(f"=== 이어하기 모드 ({state.get('areas_mode', 'test')}) ===")
+        crawl(areas, resume_state=state)
+    elif mode == "test":
         print("=== 테스트 모드 (강남역) ===")
         crawl(TEST_AREAS)
     elif mode == "metro":
         print("=== 수도권 모드 ===")
         crawl(METRO_AREAS)
     else:
-        print(f"Usage: python crawl.py [test|metro]")
+        print("Usage: python crawl.py [test|metro|resume]")

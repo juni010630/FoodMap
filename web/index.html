@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FoodMap - 맛집 지도</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <h1>FoodMap</h1>
+      <div id="controls">
+        <select id="area-filter">
+          <option value="all">전체 지역</option>
+        </select>
+        <select id="score-filter">
+          <option value="1.75">1.75+ 전체</option>
+          <option value="2.0">2.0+</option>
+          <option value="2.5">2.5+ 맛집</option>
+          <option value="3.0">3.0+ 갓맛집</option>
+        </select>
+        <span id="count-badge">0개</span>
+      </div>
+    </header>
+    <div id="map"></div>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

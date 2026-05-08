@@ -1,0 +1,167 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* 헤더 */
+#header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  z-index: 1000;
+  flex-shrink: 0;
+}
+
+#header h1 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #d32f2f;
+  white-space: nowrap;
+}
+
+#controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#controls select {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+#count-badge {
+  background: #d32f2f;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* 지도 */
+#map {
+  flex: 1;
+  width: 100%;
+}
+
+/* 팝업 커스텀 */
+.foodmap-popup {
+  font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif;
+  min-width: 200px;
+}
+
+.foodmap-popup .popup-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.foodmap-popup .popup-category {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.foodmap-popup .popup-score {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.foodmap-popup .popup-score .score-value {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.foodmap-popup .popup-score .score-label {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: #fff;
+}
+
+.popup-score .score-label.god { background: #d32f2f; }
+.popup-score .score-label.excellent { background: #e64a19; }
+.popup-score .score-label.good { background: #388e3c; }
+.popup-score .score-label.decent { background: #1976d2; }
+
+.foodmap-popup .popup-low-conf {
+  font-size: 12px;
+  color: #e65100;
+  margin-bottom: 8px;
+}
+
+.foodmap-popup .popup-link {
+  display: inline-block;
+  padding: 5px 12px;
+  background: #03c75a;
+  color: #fff;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.foodmap-popup .popup-link:hover {
+  background: #02b350;
+}
+
+/* 마커 스타일 */
+.foodmap-marker-wrapper {
+  background: none !important;
+  border: none !important;
+}
+
+.foodmap-marker {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 13px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 600px) {
+  #header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  #header h1 {
+    font-size: 15px;
+  }
+
+  #controls select {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+
+  #count-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+}

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+crawler/test_*.py
+crawler/fix_encoding.py
+debug.js
+.DS_Store

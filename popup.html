@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 260px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif;
+      font-size: 13px;
+      color: #222;
+      line-height: 1.6;
+    }
+    h1 {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .formula {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .grades { margin-bottom: 14px; }
+    .grade {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 13px;
+    }
+    .grade-emoji { font-size: 16px; width: 22px; text-align: center; }
+    .grade-range {
+      color: #888;
+      font-size: 11px;
+      margin-left: auto;
+    }
+    .note {
+      color: #888;
+      font-size: 11px;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>FoodMap</h1>
+
+  <div class="formula">
+    "음식이 맛있어요" / 2위 태그 = 맛집 점수
+  </div>
+
+  <div class="grades">
+    <div class="grade">
+      <span class="grade-emoji">&#x1F525;</span>
+      <span>갓맛집</span>
+      <span class="grade-range">2.50+</span>
+    </div>
+    <div class="grade">
+      <span class="grade-emoji">&#x1F525;</span>
+      <span>맛집</span>
+      <span class="grade-range">2.00 ~ 2.50</span>
+    </div>
+    <div class="grade">
+      <span class="grade-emoji">&#x1F44D;</span>
+      <span>괜찮음</span>
+      <span class="grade-range">1.50 ~ 2.00</span>
+    </div>
+    <div class="grade">
+      <span class="grade-emoji">&#x1F610;</span>
+      <span>보통</span>
+      <span class="grade-range">1.50 미만</span>
+    </div>
+  </div>
+
+  <p class="note">
+    네이버 지도에서 음식점 상세 페이지를 열면 자동으로 점수가 표시됩니다.
+    뱃지는 드래그로 이동, X로 닫을 수 있습니다.
+  </p>
+</body>
+</html>

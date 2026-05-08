@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "FoodMap - 네이버 맛집 점수",
+  "version": "1.0.0",
+  "description": "네이버 지도 방문자 리뷰 태그 비율로 맛집 점수를 자동 계산합니다",
+  "content_scripts": [
+    {
+      "matches": [
+        "*://pcmap.place.naver.com/*",
+        "*://m.place.naver.com/*",
+        "*://map.naver.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

@@ -16,7 +16,7 @@ import os
 from config import (
     MIN_SCORE, SEARCH_DELAY, DETAIL_DELAY,
     EXCLUDE_CATEGORIES, FOOD_TAG_CODE, HTTP_HEADERS,
-    TEST_AREAS, METRO_AREAS,
+    TEST_AREAS, METRO_AREAS, SEARCH_TERMS,
 )
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
@@ -58,11 +58,11 @@ def save_results(results):
             json.dump(sorted_results, f, ensure_ascii=False, indent=2)
 
 
-def search_restaurants(area):
-    """특정 지역의 음식점 목록 검색"""
+def _search_one(area, term):
+    """단일 검색어로 한 번 호출. 결과 음식점 리스트 반환 (오류면 빈 리스트)."""
     url = "https://pcmap.place.naver.com/restaurant/list"
     params = {
-        "query": f"{area['name']} 음식점",
+        "query": f"{area['name']} {term}",
         "x": area["x"],
         "y": area["y"],
         "clientX": area["x"],
@@ -72,14 +72,14 @@ def search_restaurants(area):
     try:
         r = requests.get(url, params=params, headers=HTTP_HEADERS, timeout=15)
         if r.status_code == 429:
-            print(f"  [!] 429 차단됨. 30초 대기 후 재시도...")
+            print(f"  [!] 429 차단됨 ({term}). 30초 대기 후 재시도...")
             time.sleep(30)
             r = requests.get(url, params=params, headers=HTTP_HEADERS, timeout=15)
         if r.status_code != 200:
-            print(f"  [!] search failed: HTTP {r.status_code}")
+            print(f"  [!] search failed ({term}): HTTP {r.status_code}")
             return []
     except Exception as e:
-        print(f"  [!] search error: {e}")
+        print(f"  [!] search error ({term}): {e}")
         return []
 
     html = r.content.decode("utf-8", errors="replace")
@@ -114,6 +114,21 @@ def search_restaurants(area):
         })
 
     return restaurants
+
+
+def search_restaurants(area):
+    """특정 지역에서 SEARCH_TERMS 전체로 검색해 dedup된 음식점 리스트 반환."""
+    merged = {}  # id -> data
+    for term in SEARCH_TERMS:
+        results = _search_one(area, term)
+        added = 0
+        for r in results:
+            if r["id"] not in merged:
+                merged[r["id"]] = r
+                added += 1
+        print(f"    [{term}] {len(results)}개 (신규 +{added})")
+        time.sleep(SEARCH_DELAY)
+    return list(merged.values())
 
 
 def fetch_score(place_id):
@@ -222,7 +237,6 @@ def crawl(areas, resume_state=None):
             print(f"  검색 결과: {len(restaurants)}개 (신규: {len(new)}개)")
             total_searched += len(new)
             start_rest_idx = 0
-            time.sleep(SEARCH_DELAY)
 
         for i in range(start_rest_idx, len(new)):
             rest = new[i]

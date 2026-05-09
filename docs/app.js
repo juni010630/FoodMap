@@ -3,15 +3,30 @@
 
   var DATA_URL = "data/restaurants.json";
   var allData = [];
-  var markers = [];
+  var clusterGroup;
   var map;
 
   function initMap() {
-    map = L.map("map", { center: [37.5, 127.0], zoom: 12, zoomControl: true });
+    map = L.map("map", {
+      center: [37.5, 127.0],
+      zoom: 12,
+      zoomControl: true,
+      preferCanvas: true,
+    });
     L.tileLayer(
       "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
       { attribution: '&copy; CARTO &copy; OSM', maxZoom: 19, subdomains: "abcd" }
     ).addTo(map);
+
+    clusterGroup = L.markerClusterGroup({
+      chunkedLoading: true,
+      chunkInterval: 100,
+      disableClusteringAtZoom: 16,
+      spiderfyOnMaxZoom: false,
+      showCoverageOnHover: false,
+      maxClusterRadius: 60,
+    });
+    map.addLayer(clusterGroup);
   }
 
   function getGrade(score) {
@@ -53,20 +68,18 @@
   }
 
   function renderMarkers(data) {
-    markers.forEach(function (m) { map.removeLayer(m); });
-    markers = [];
+    clusterGroup.clearLayers();
 
-    data.forEach(function (r) {
-      var marker = L.marker([r.lat, r.lng], { icon: createIcon(r.score) })
-        .bindPopup(createPopup(r), { maxWidth: 260 })
-        .addTo(map);
-      markers.push(marker);
+    var newMarkers = data.map(function (r) {
+      return L.marker([r.lat, r.lng], { icon: createIcon(r.score) })
+        .bindPopup(createPopup(r), { maxWidth: 260 });
     });
+    clusterGroup.addLayers(newMarkers);
 
     document.getElementById("count-badge").textContent = data.length + "\uAC1C";
 
     if (data.length > 0) {
-      map.fitBounds(L.featureGroup(markers).getBounds().pad(0.1));
+      map.fitBounds(clusterGroup.getBounds().pad(0.1));
     }
   }
 

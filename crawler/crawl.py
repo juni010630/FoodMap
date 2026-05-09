@@ -187,8 +187,19 @@ def crawl(areas, resume_state=None):
         pending = resume_state.get("pending", [])
         print(f"[*] 이어하기: {len(all_results)}개 수집됨, area#{start_area_idx}부터 재개")
     else:
+        # 기존 restaurants.json이 있으면 불러와서 dedup용으로 활용
         all_results = []
         seen_ids = set()
+        if os.path.exists(RESULT_FILE):
+            try:
+                with open(RESULT_FILE, "r", encoding="utf-8") as f:
+                    all_results = json.load(f)
+                seen_ids = {r["placeId"] for r in all_results}
+                print(f"[*] 기존 결과 불러옴: {len(all_results)}개 (dedup용)")
+            except Exception as e:
+                print(f"[!] 기존 결과 로드 실패: {e}")
+                all_results = []
+                seen_ids = set()
         start_area_idx = 0
         start_rest_idx = 0
         pending = []

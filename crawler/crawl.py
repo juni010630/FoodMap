@@ -16,7 +16,7 @@ import os
 from config import (
     MIN_SCORE, SEARCH_DELAY, DETAIL_DELAY,
     EXCLUDE_CATEGORIES, FOOD_TAG_CODE, HTTP_HEADERS,
-    TEST_AREAS, METRO_AREAS, SEARCH_TERMS,
+    TEST_AREAS, METRO_AREAS, NATIONAL_AREAS, SEARCH_TERMS,
 )
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
@@ -189,7 +189,7 @@ def fetch_score(place_id):
     }
 
 
-def crawl(areas, resume_state=None):
+def crawl(areas, mode_name="metro", resume_state=None):
     """메인 크롤링 파이프라인 (중간 저장 + 이어하기 지원)"""
     os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -278,7 +278,7 @@ def crawl(areas, resume_state=None):
                     "area_idx": area_idx,
                     "rest_idx": i + 1,
                     "pending": new,
-                    "areas_mode": "metro" if len(areas) > 3 else "test",
+                    "areas_mode": mode_name,
                 })
                 save_results(all_results)
                 print(f"  [+] 중간 저장 ({len(all_results)}개)")
@@ -312,19 +312,24 @@ def crawl(areas, resume_state=None):
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "test"
 
+    MODE_AREAS = {
+        "test": TEST_AREAS,
+        "metro": METRO_AREAS,
+        "national": NATIONAL_AREAS,
+    }
+
     if mode == "resume":
         state = load_progress()
         if not state:
             print("이어할 진행 상태가 없습니다.")
             sys.exit(1)
-        areas = METRO_AREAS if state.get("areas_mode") == "metro" else TEST_AREAS
-        print(f"=== 이어하기 모드 ({state.get('areas_mode', 'test')}) ===")
-        crawl(areas, resume_state=state)
-    elif mode == "test":
-        print("=== 테스트 모드 (강남역) ===")
-        crawl(TEST_AREAS)
-    elif mode == "metro":
-        print("=== 수도권 모드 ===")
-        crawl(METRO_AREAS)
+        saved_mode = state.get("areas_mode", "test")
+        areas = MODE_AREAS.get(saved_mode, TEST_AREAS)
+        print(f"=== 이어하기 모드 ({saved_mode}) ===")
+        crawl(areas, mode_name=saved_mode, resume_state=state)
+    elif mode in MODE_AREAS:
+        label = {"test": "테스트 (강남역)", "metro": "수도권", "national": "전국 (수도권 제외)"}[mode]
+        print(f"=== {label} 모드 ===")
+        crawl(MODE_AREAS[mode], mode_name=mode)
     else:
-        print("Usage: python crawl.py [test|metro|resume]")
+        print("Usage: python crawl.py [test|metro|national|resume]")

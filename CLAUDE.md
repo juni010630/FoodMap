@@ -72,9 +72,13 @@ re.finditer(r'"code":"([^"]+)"[^}]*?"displayName":"([^"]+)","count":(\d+)', chun
 cd crawler
 pip install -r requirements.txt
 python crawl.py test      # 강남역 테스트
-python crawl.py metro     # 수도권 전체 (15개 지역)
+python crawl.py metro     # 수도권 전체 (146개 지역, 서울/인천/경기)
+python crawl.py national  # 전국 광역시·도청소재지·주요도시 (101개, 수도권 제외)
 python crawl.py resume    # 중단된 크롤링 이어하기
 ```
+
+기존 restaurants.json이 있으면 자동으로 placeId dedup. 한 번에 모드를 바꿔
+실행해도 결과는 누적됨 (`metro` → `national` 이어 실행 가능).
 
 ## 웹 지도
 - Leaflet + CartoDB Voyager 타일 (무료, API 키 불필요)

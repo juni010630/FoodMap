@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "data/restaurants.json?v=4";
+  var DATA_URL = "data/restaurants.json?v=5";
   var allData = [];
   var clusterGroup;
   var map;
@@ -74,7 +74,7 @@
         '<span class="score-label ' + grade.cls + '">' + grade.label + '</span>' +
       '</div>' +
       lowConf +
-      '<a class="popup-link" href="' + naverUrl + '" target="_blank">' +
+      '<a class="popup-link" href="' + naverUrl + '">' +
         '\uB124\uC774\uBC84 \uC9C0\uB3C4\uC5D0\uC11C \uBCF4\uAE30</a>' +
       '</div>';
   }

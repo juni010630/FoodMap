@@ -3,6 +3,7 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Noto Sans KR", sans-serif;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -10,14 +11,15 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
 }
 
-/* 헤더 */
+/* 헤더 — iOS Dynamic Island/notch 회피 위해 safe-area-inset-top 패딩 */
 #header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: calc(10px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 10px calc(16px + env(safe-area-inset-left));
   background: #fff;
   border-bottom: 1px solid #e0e0e0;
   z-index: 1000;
@@ -147,7 +149,7 @@ body {
 /* 모바일 반응형 */
 @media (max-width: 600px) {
   #header {
-    padding: 8px 12px;
+    padding: calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 8px calc(12px + env(safe-area-inset-left));
     gap: 8px;
   }
 

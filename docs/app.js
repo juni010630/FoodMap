@@ -27,6 +27,16 @@
       maxClusterRadius: 60,
     });
     map.addLayer(clusterGroup);
+
+    L.control.locate({
+      position: "topleft",
+      drawCircle: true,
+      flyTo: true,
+      keepCurrentZoomLevel: false,
+      initialZoomLevel: 16,
+      strings: { title: "현재 위치로 이동" },
+      locateOptions: { enableHighAccuracy: true, maximumAge: 30000 },
+    }).addTo(map);
   }
 
   function getGrade(score) {

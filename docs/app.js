@@ -1,10 +1,12 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "data/restaurants.json?v=3";
+  var DATA_URL = "data/restaurants.json?v=4";
   var allData = [];
   var clusterGroup;
   var map;
+  var areaCenters = {};
+  var didInitialFit = false;
 
   function initMap() {
     map = L.map("map", {
@@ -88,29 +90,45 @@
 
     document.getElementById("count-badge").textContent = data.length + "\uAC1C";
 
-    if (data.length > 0) {
+    if (!didInitialFit && data.length > 0) {
       map.fitBounds(clusterGroup.getBounds().pad(0.1));
+      didInitialFit = true;
     }
   }
 
-  function applyFilters() {
-    var areaVal = document.getElementById("area-filter").value;
+  function applyScoreFilter() {
     var scoreVal = parseFloat(document.getElementById("score-filter").value);
-
-    var filtered = allData.filter(function (r) {
-      if (areaVal !== "all" && r.area !== areaVal) return false;
-      if (r.score < scoreVal) return false;
-      return true;
-    });
-
+    var filtered = allData.filter(function (r) { return r.score >= scoreVal; });
     renderMarkers(filtered);
   }
 
+  function jumpToArea() {
+    var sel = document.getElementById("area-filter");
+    var areaVal = sel.value;
+    if (areaVal === "all") return;
+    var c = areaCenters[areaVal];
+    if (!c) return;
+    map.flyTo([c.lat, c.lng], 15, { duration: 1.0 });
+    // \uC120\uD0DD \uD6C4 \uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB824 \uB2E4\uC74C \uAC19\uC740 \uC9C0\uC5ED\uB3C4 \uB2E4\uC2DC \uB204\uB97C \uC218 \uC788\uAC8C
+    sel.value = "all";
+  }
+
   function buildAreaOptions() {
-    var areas = {};
-    allData.forEach(function (r) { if (r.area) areas[r.area] = true; });
+    var sums = {};  // area -> { latSum, lngSum, n }
+    allData.forEach(function (r) {
+      if (!r.area) return;
+      if (!sums[r.area]) sums[r.area] = { latSum: 0, lngSum: 0, n: 0 };
+      sums[r.area].latSum += r.lat;
+      sums[r.area].lngSum += r.lng;
+      sums[r.area].n += 1;
+    });
+    areaCenters = {};
+    Object.keys(sums).forEach(function (a) {
+      areaCenters[a] = { lat: sums[a].latSum / sums[a].n, lng: sums[a].lngSum / sums[a].n };
+    });
+
     var select = document.getElementById("area-filter");
-    Object.keys(areas).sort().forEach(function (area) {
+    Object.keys(areaCenters).sort().forEach(function (area) {
       var opt = document.createElement("option");
       opt.value = area;
       opt.textContent = area;
@@ -124,7 +142,7 @@
       .then(function (data) {
         allData = data;
         buildAreaOptions();
-        applyFilters();
+        applyScoreFilter();
       })
       .catch(function () {
         document.getElementById("count-badge").textContent = "No data";
@@ -133,6 +151,6 @@
 
   initMap();
   loadData();
-  document.getElementById("area-filter").addEventListener("change", applyFilters);
-  document.getElementById("score-filter").addEventListener("change", applyFilters);
+  document.getElementById("area-filter").addEventListener("change", jumpToArea);
+  document.getElementById("score-filter").addEventListener("change", applyScoreFilter);
 })();

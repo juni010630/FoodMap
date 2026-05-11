@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "data/restaurants.json?v=5";
+  var DATA_URL = "data/restaurants.json?v=6";
   var allData = [];
   var clusterGroup;
   var map;
@@ -33,11 +33,16 @@
     L.control.locate({
       position: "topleft",
       drawCircle: true,
-      flyTo: true,
+      flyTo: false,
       keepCurrentZoomLevel: false,
-      initialZoomLevel: 16,
+      initialZoomLevel: 15,
       strings: { title: "현재 위치로 이동" },
-      locateOptions: { enableHighAccuracy: true, maximumAge: 30000 },
+      locateOptions: {
+        enableHighAccuracy: false,
+        maximumAge: 120000,
+        timeout: 5000,
+      },
+      cacheLocation: true,
     }).addTo(map);
   }
 

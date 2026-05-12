@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "data/restaurants.json?v=6";
+  var DATA_URL = "data/restaurants.json?v=7";
   var allData = [];
   var clusterGroup;
   var map;

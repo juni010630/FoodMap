@@ -1,12 +1,13 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "data/restaurants.json?v=8";
+  var DATA_URL = "data/restaurants.json?v=9";
   var allData = [];
   var clusterGroup;
   var map;
   var areaCenters = {};
   var didInitialFit = false;
+  var franchiseNames = {}; // baseName -> true
 
   // 카테고리 그룹 — 위쪽이 우선 매칭. category 문자열에 keyword가 포함되면 해당 그룹.
   var CATEGORY_GROUPS = [
@@ -126,12 +127,38 @@
     }
   }
 
+  // 프랜차이즈 판별: 지점명 제거 후 동일 이름 3개 이상이면 프랜차이즈
+  function getBaseName(name) {
+    return name.replace(/\s+[\w가-힣]+(?:점|역점|역|호점)$/, "")
+               .replace(/\s+(?:본점|직영점)$/, "");
+  }
+
+  function buildFranchiseIndex() {
+    var counts = {};
+    allData.forEach(function (r) {
+      var bn = getBaseName(r.name);
+      r._baseName = bn;
+      counts[bn] = (counts[bn] || 0) + 1;
+    });
+    franchiseNames = {};
+    Object.keys(counts).forEach(function (bn) {
+      if (counts[bn] >= 3) franchiseNames[bn] = true;
+    });
+    allData.forEach(function (r) {
+      r._isFranchise = !!franchiseNames[r._baseName];
+    });
+  }
+
   function applyFilters() {
     var scoreVal = parseFloat(document.getElementById("score-filter").value);
     var catVal = document.getElementById("category-filter").value;
+    var hideLowConf = document.getElementById("hide-low-conf").checked;
+    var hideFranchise = document.getElementById("hide-franchise").checked;
     var filtered = allData.filter(function (r) {
       if (r.score < scoreVal) return false;
       if (catVal !== "all" && r._cat !== catVal) return false;
+      if (hideLowConf && r.foodCount <= 50) return false;
+      if (hideFranchise && r._isFranchise) return false;
       return true;
     });
     renderMarkers(filtered);
@@ -199,6 +226,7 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         allData = data;
+        buildFranchiseIndex();
         buildAreaOptions();
         buildCategoryOptions();
         applyFilters();
@@ -213,4 +241,6 @@
   document.getElementById("area-filter").addEventListener("change", jumpToArea);
   document.getElementById("category-filter").addEventListener("change", applyFilters);
   document.getElementById("score-filter").addEventListener("change", applyFilters);
+  document.getElementById("hide-low-conf").addEventListener("change", applyFilters);
+  document.getElementById("hide-franchise").addEventListener("change", applyFilters);
 })();

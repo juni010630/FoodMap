@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.locatecontrol@0.83.1/dist/L.Control.Locate.min.css">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
   <div id="app">
@@ -27,6 +27,8 @@
           <option value="2.5">2.5+ 맛집</option>
           <option value="3.0">3.0+ 갓맛집</option>
         </select>
+        <label class="toggle-label"><input type="checkbox" id="hide-low-conf"><span class="toggle-switch"></span>신뢰도 부족 제외</label>
+        <label class="toggle-label"><input type="checkbox" id="hide-franchise"><span class="toggle-switch"></span>프랜차이즈 제외</label>
         <span id="count-badge">0개</span>
       </div>
     </header>
@@ -35,6 +37,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://unpkg.com/leaflet.locatecontrol@0.83.1/dist/L.Control.Locate.min.js"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

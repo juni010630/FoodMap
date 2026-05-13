@@ -105,7 +105,7 @@
         '<span class="score-label ' + grade.cls + '">' + grade.label + '</span>' +
       '</div>' +
       lowConf +
-      '<a class="popup-link" href="' + naverUrl + '">' +
+      '<a class="popup-link" href="' + naverUrl + '" target="_blank">' +
         '\uB124\uC774\uBC84 \uC9C0\uB3C4\uC5D0\uC11C \uBCF4\uAE30</a>' +
       '</div>';
   }
